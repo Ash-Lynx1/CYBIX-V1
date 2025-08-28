@@ -1,0 +1,8 @@
+services:
+  - type: worker
+    name: cybix-v1
+    env: node
+    plan: free
+    buildCommand: "npm install"
+    startCommand: "node index.js"
+    autoDeploy: true
