@@ -1,4 +1,10 @@
-export default {
+// config.js
+import dotenv from "dotenv";
+dotenv.config();
+
+export const BOT_TOKEN = process.env.BOT_TOKEN || "";
+
+const config = {
   botName: "𝐂𝐘𝐁𝐈𝐗 𝐕1",
   prefix: ".",
   owner: "t.me/cybixdev",
@@ -7,5 +13,7 @@ export default {
     telegram: "https://t.me/cybixtech"
   },
   banner: "https://i.postimg.cc/L4NwW5WY/boykaxd.jpg",
-  botToken: process.env.BOT_TOKEN // Do NOT hardcode your token; set it via Render env variables!
+  botToken: BOT_TOKEN // always synced to env var
 };
+
+export default config;
