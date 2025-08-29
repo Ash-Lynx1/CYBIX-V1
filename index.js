@@ -1,5 +1,5 @@
 import { Telegraf } from "telegraf";
-import { BOT_TOKEN } from "./config.js";
+import config, { BOT_TOKEN } from "./config.js";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -12,7 +12,7 @@ if (!BOT_TOKEN) {
 
 const bot = new Telegraf(BOT_TOKEN);
 
-// Auto-load plugins from ./plugins
+// --- Auto-load plugins from ./plugins ---
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const pluginsDir = path.join(__dirname, "plugins");
@@ -37,14 +37,23 @@ fs.readdirSync(pluginsDir).forEach(file => {
   }
 });
 
-// Health check server for Render
+// --- Health check server for Render ---
 const app = express();
-app.get("/", (req, res) => res.send("🤖 CYBIX V1 Bot is alive"));
+app.get("/", (req, res) =>
+  res.send(`
+    <h2>🤖 ${config.botName} is alive!</h2>
+    <p><b>Owner:</b> ${config.owner}</p>
+    <p><b>Telegram:</b> <a href="${config.channels.telegram}" target="_blank">${config.channels.telegram}</a></p>
+    <p><b>WhatsApp:</b> <a href="${config.channels.whatsapp}" target="_blank">${config.channels.whatsapp}</a></p>
+    <img src="${config.banner}" alt="Bot Banner" width="300"/>
+  `)
+);
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🌐 Health check running on port ${PORT}`));
 
 bot.launch()
-  .then(() => console.log("🤖 CYBIX V1 Bot is running..."))
+  .then(() => console.log(`🤖 ${config.botName} is running...`))
   .catch(err => console.error("❌ Failed to launch bot:", err));
 
 process.once("SIGINT", () => bot.stop("SIGINT"));
