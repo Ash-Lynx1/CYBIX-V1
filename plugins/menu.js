@@ -11,6 +11,7 @@ const rootDir = path.join(__dirname, "..");
 const dbPath = path.join(rootDir, "database", "stats.json");
 const pluginsDir = path.join(rootDir, "plugins");
 
+// Safely read JSON
 function safeReadJSON(p, fallback) {
   try {
     return JSON.parse(fs.readFileSync(p, "utf8"));
@@ -19,6 +20,7 @@ function safeReadJSON(p, fallback) {
   }
 }
 
+// Count .js plugins
 function countPlugins() {
   try {
     return fs.readdirSync(pluginsDir).filter(f => f.endsWith(".js")).length;
@@ -27,6 +29,7 @@ function countPlugins() {
   }
 }
 
+// Build menu caption
 function menuCaption(username = "user") {
   const stats = safeReadJSON(dbPath, { users: [] });
   const usersCount = Array.isArray(stats.users) ? stats.users.length : 0;
@@ -34,7 +37,7 @@ function menuCaption(username = "user") {
 
   return (
 `╭━━━━━【${config.botName}】━━━━━━
-┃ hi @${username} welcome to (${config.botName}), enjoy..!
+┃ hi @${username}, welcome to (${config.botName}), enjoy..!
 ┣━[ users: ${usersCount}
 ┣━[ prefix: ${config.prefix}
 ┣━[ plugins: ${pluginsCount}
@@ -59,7 +62,6 @@ function menuCaption(username = "user") {
 ┃ .developer
 ┃ .buybot
 ┃ .repo
-┃ .developer
 ╰━━━━━━━━━━━━━━━━━━━━━
 ┣━[ DEVELOPER
 ┃ .broadcast
@@ -71,6 +73,7 @@ function menuCaption(username = "user") {
 ▣ powered by **CYBIX TECH** 👹💀`).trim();
 }
 
+// Stacked buttons under banner
 function stackedBrandKeyboard() {
   return Markup.inlineKeyboard([
     [Markup.button.url("📢 WhatsApp Channel", config.channels.whatsapp)],
@@ -89,15 +92,19 @@ export default function (bot) {
         {
           caption,
           parse_mode: "Markdown",
-          ...stackedBrandKeyboard()
+          reply_markup: stackedBrandKeyboard().reply_markup
         }
       );
-    } catch {
-      await ctx.reply(caption, { parse_mode: "Markdown", ...stackedBrandKeyboard() });
+    } catch (err) {
+      console.error("❌ Error sending menu:", err.message);
+      await ctx.reply(caption, {
+        parse_mode: "Markdown",
+        reply_markup: stackedBrandKeyboard().reply_markup
+      });
     }
   };
 
-  // slash + dot styles
+  // Commands
   bot.start(sendMenu);
   bot.command("menu", sendMenu);
   bot.hears(/^[.。]menu\b/i, sendMenu);
