@@ -1,34 +1,38 @@
-import { fetchJson } from "../utils/fetcher.js";
-import config from "../config.js";
-import { defaultButtons } from "../utils/buttons.js";
+import { fetchJson, fetchBuffer } from "../utils/fetcher.js";
+import { brandKeyboard, BANNER_URL } from "../utils/buttons.js";
 
-export default function gitcloneCommand(bot) {
-  bot.hears(/^\.gitclone\s+(.+)/i, async (ctx) => {
-    try {
-      const repoUrl = ctx.match[1];
-      const url = `https://api.princetechn.com/api/download/gitclone?apikey=prince&url=${encodeURIComponent(repoUrl)}`;
-      const res = await fetchJson(url);
-
-      if (res && res.result && res.result.download_url) {
-        await ctx.replyWithPhoto(
-          { url: config.banner },
-          {
-            caption: `📂 *GitHub Repo Cloner*\n\n*Repo:* ${res.result.repo_name || "Unknown"}\n\n⬇️ Downloading...`,
-            parse_mode: "Markdown",
-            ...defaultButtons()
-          }
-        );
-
-        await ctx.replyWithDocument({
-          url: res.result.download_url,
-          filename: `${res.result.repo_name || "repo"}.zip`,
-        });
-      } else {
-        ctx.reply("⚠️ Repository not found or failed to fetch.");
-      }
-    } catch (err) {
-      console.error("❌ GitClone command error:", err.message);
-      ctx.reply("⚠️ Failed to clone repository.");
+export default function(bot) {
+  const run = async (ctx, repoUrl) => {
+    const api = `https://api.princetechn.com/api/download/gitclone?apikey=prince&url=${encodeURIComponent(repoUrl)}`;
+    const data = await fetchJson(api);
+    const zip = data?.result?.url || data?.url;
+    const name = data?.result?.name || "repository";
+    
+    if (!zip) {
+      return ctx.reply("⚠️ Could not fetch ZIP. Check the repo URL.", { reply_markup: brandKeyboard() });
     }
+    
+    const buf = await fetchBuffer(zip);
+    if (buf) {
+      try {
+        return await ctx.replyWithDocument({ source: buf, filename: `${name}.zip` }, { reply_markup: brandKeyboard() });
+      } catch {
+        // fall back to link
+      }
+    }
+    
+    return ctx.replyWithPhoto(BANNER_URL, {
+      caption: `📦 *Git Clone*\n\n*Name:* ${name}\n*Download:* ${zip}`,
+      parse_mode: "Markdown",
+      reply_markup: brandKeyboard()
+    });
+  };
+  
+  bot.command("gitclone", async (ctx) => {
+    const q = ctx.message.text.split(" ").slice(1).join(" ").trim();
+    if (!q) return ctx.reply("❗ Usage: /gitclone https://github.com/user/repo", { reply_markup: brandKeyboard() });
+    run(ctx, q);
   });
+  
+  bot.hears(/^[.。]gitclone\s+(.+)/i, async (ctx) => run(ctx, ctx.match[1].trim()));
 }

@@ -1,32 +1,21 @@
 import axios from "axios";
 
-/**
- * Fetch JSON safely from an API
- * Always returns a valid object so bot never crashes.
- */
-export async function fetchJson(url) {
+export async function fetchJson(url, cfg = {}) {
   try {
-    const res = await axios.get(url, { timeout: 20000 });
-    if (res && res.data) {
-      return res.data;
-    } else {
-      return { error: true, message: "Empty response from API." };
-    }
+    const res = await axios.get(url, { timeout: 20000, ...cfg });
+    return res?.data ?? { error: true, message: "Empty response" };
   } catch (err) {
-    console.error("❌ Fetch error:", err.message);
-    return { error: true, message: "API request failed. Try again later." };
+    console.error("❌ fetchJson error:", err.message);
+    return { error: true, message: "API request failed" };
   }
 }
 
-/**
- * Fetch file buffer safely (for downloads)
- */
-export async function fetchBuffer(url) {
+export async function fetchBuffer(url, cfg = {}) {
   try {
-    const res = await axios.get(url, { responseType: "arraybuffer", timeout: 30000 });
+    const res = await axios.get(url, { responseType: "arraybuffer", timeout: 30000, ...cfg });
     return res.data;
   } catch (err) {
-    console.error("❌ Buffer fetch error:", err.message);
-    return null; // Always return null instead of crashing
+    console.error("❌ fetchBuffer error:", err.message);
+    return null;
   }
 }

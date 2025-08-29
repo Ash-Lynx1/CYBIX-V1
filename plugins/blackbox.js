@@ -1,29 +1,27 @@
 import { fetchJson } from "../utils/fetcher.js";
-import config from "../config.js";
-import { defaultButtons } from "../utils/buttons.js";
+import { brandKeyboard, BANNER_URL } from "../utils/buttons.js";
 
-export default function blackboxCommand(bot) {
-  bot.hears(/^\.blackbox\s+(.+)/i, async (ctx) => {
+export default function(bot) {
+  const run = async (ctx, q) => {
+    const url = `https://apis.davidcyriltech.my.id/blackbox?q=${encodeURIComponent(q)}`;
+    const data = await fetchJson(url);
+    const text = data?.result || data?.answer || data?.message || "No response.";
     try {
-      const query = ctx.match[1];
-      const url = `https://apis.davidcyriltech.my.id/blackbox?q=${encodeURIComponent(query)}`;
-      const res = await fetchJson(url);
-
-      if (res && res.data) {
-        await ctx.replyWithPhoto(
-          { url: config.banner },
-          {
-            caption: `💻 *Blackbox Result*\n\n${res.data}`,
-            parse_mode: "Markdown",
-            ...defaultButtons()
-          }
-        );
-      } else {
-        ctx.reply("⚠️ No response from Blackbox API.");
-      }
-    } catch (err) {
-      console.error("❌ Blackbox command error:", err.message);
-      ctx.reply("⚠️ Failed to fetch Blackbox response.");
+      await ctx.replyWithPhoto(BANNER_URL, {
+        caption: `🧩 *Blackbox*\n\n${text}`,
+        parse_mode: "Markdown",
+        reply_markup: brandKeyboard()
+      });
+    } catch {
+      await ctx.reply(`🧩 Blackbox\n\n${text}`, { reply_markup: brandKeyboard() });
     }
+  };
+  
+  bot.command("blackbox", async (ctx) => {
+    const q = ctx.message.text.split(" ").slice(1).join(" ").trim();
+    if (!q) return ctx.reply("❗ Usage: /blackbox your prompt", { reply_markup: brandKeyboard() });
+    run(ctx, q);
   });
+  
+  bot.hears(/^[.。]blackbox\s+(.+)/i, async (ctx) => run(ctx, ctx.match[1].trim()));
 }

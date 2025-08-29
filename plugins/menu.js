@@ -1,17 +1,12 @@
 import config from "../config.js";
-import { defaultButtons } from "../utils/buttons.js";
+import { brandKeyboard, BANNER_URL } from "../utils/buttons.js";
 
-export default function menuCommand(bot) {
-  bot.command("menu", async (ctx) => {
-    try {
-      const user = ctx.from.username ? `@${ctx.from.username}` : ctx.from.first_name;
-
-      const menuText = `
+const menuCaption = (username = "user") => `
 ╭━━━━━【${config.botName}】━━━━━━
-┃ hi ${user}, welcome to ${config.botName}, enjoy..!
-┣━[ users: dynamic
+┃ hi @${username} welcome to ${config.botName}, enjoy..!
+┣━[ users: 
 ┣━[ prefix: ${config.prefix}
-┣━[ plugins: ${bot ? "active" : "none"}
+┣━[ plugins:
 ┣━[ owner: ${config.owner}
 ╰━━━━━━━━━━━━━━━━━━━━━
 
@@ -42,20 +37,25 @@ export default function menuCommand(bot) {
 ┃ .listusers
 ╰━━━━━━━━━━━━━━━━━━━━━
 
-▣ powered by **CYBIX TECH** 👹💀
-`;
+▣ powered by *CYBIX TECH* 👹💀
+`.trim();
 
-      await ctx.replyWithPhoto(
-        { url: config.banner },
-        {
-          caption: menuText,
-          parse_mode: "Markdown",
-          ...defaultButtons()
-        }
-      );
-    } catch (err) {
-      console.error("❌ Menu command error:", err.message);
-      ctx.reply("⚠️ Failed to load menu. Try again.");
+export default function(bot) {
+  const sendMenu = async (ctx) => {
+    try {
+      await ctx.replyWithPhoto(BANNER_URL, {
+        caption: menuCaption(ctx.from?.username || "user"),
+        parse_mode: "Markdown",
+        reply_markup: brandKeyboard()
+      });
+    } catch (e) {
+      await ctx.reply(menuCaption(ctx.from?.username || "user"), {
+        reply_markup: brandKeyboard()
+      });
     }
-  });
+  };
+  
+  bot.start(sendMenu);
+  bot.command("menu", sendMenu);
+  bot.hears(/^[.。]menu\b/i, sendMenu);
 }

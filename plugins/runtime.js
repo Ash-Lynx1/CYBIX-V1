@@ -1,23 +1,20 @@
-import { getUptime } from "../utils/uptime.js";
-import config from "../config.js";
-import { defaultButtons } from "../utils/buttons.js";
+import { formatUptime } from "../utils/uptime.js";
+import { brandKeyboard, BANNER_URL } from "../utils/buttons.js";
 
-export default function runtimeCommand(bot) {
-  bot.hears(/^\.runtime$/i, async (ctx) => {
+export default function(bot) {
+  const send = async (ctx) => {
+    const up = formatUptime(process.uptime());
     try {
-      const uptime = getUptime();
-
-      await ctx.replyWithPhoto(
-        { url: config.banner },
-        {
-          caption: `⏳ *Bot Uptime*\n\n${uptime}`,
-          parse_mode: "Markdown",
-          ...defaultButtons()
-        }
-      );
-    } catch (err) {
-      console.error("❌ Runtime command error:", err.message);
-      ctx.reply("⚠️ Failed to fetch uptime.");
+      await ctx.replyWithPhoto(BANNER_URL, {
+        caption: `⏳ *Uptime:* ${up}`,
+        parse_mode: "Markdown",
+        reply_markup: brandKeyboard()
+      });
+    } catch {
+      await ctx.reply(`⏳ Uptime: ${up}`, { reply_markup: brandKeyboard() });
     }
-  });
+  };
+  
+  bot.command("runtime", send);
+  bot.hears(/^[.。]runtime\b/i, send);
 }

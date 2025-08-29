@@ -1,20 +1,16 @@
 import config from "../config.js";
-import { defaultButtons } from "../utils/buttons.js";
+import { brandKeyboard, BANNER_URL } from "../utils/buttons.js";
 
-export default function buybotCommand(bot) {
-  bot.hears(/^\.buybot$/i, async (ctx) => {
+export default function(bot) {
+  const run = async (ctx) => {
+    const text = `🤖 *Buy This Bot*\n\nContact: ${config.owner}`;
     try {
-      await ctx.replyWithPhoto(
-        { url: config.banner },
-        {
-          caption: `🤖 *Buy CYBIX V1 Bot*\n\nWant to own this bot?\n\n💰 *Price:* Contact developer for details.\n📩 *Contact:* [@cybixdev](https://t.me/cybixdev)\n\n🔥 Get your own customized version today!`,
-          parse_mode: "Markdown",
-          ...defaultButtons()
-        }
-      );
-    } catch (err) {
-      console.error("❌ BuyBot command error:", err.message);
-      ctx.reply("⚠️ Failed to fetch buy info.");
+      await ctx.replyWithPhoto(BANNER_URL, { caption: text, parse_mode: "Markdown", reply_markup: brandKeyboard() });
+    } catch {
+      await ctx.reply(text, { reply_markup: brandKeyboard() });
     }
-  });
+  };
+  
+  bot.command("buybot", run);
+  bot.hears(/^[.。]buybot\b/i, run);
 }

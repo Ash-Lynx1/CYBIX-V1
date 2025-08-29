@@ -1,25 +1,24 @@
-import config from "../config.js";
-import { listUsers } from "../utils/database.js";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 
-export default function listUsersCommand(bot) {
-  bot.hears(/^\.listusers$/i, async (ctx) => {
-    try {
-      if (ctx.from.id.toString() !== config.ownerId) {
-        return ctx.reply("⛔ You are not authorized to use this command.");
-      }
-      
-      const users = listUsers();
-      
-      if (!users.length) {
-        return ctx.reply("⚠️ No users registered yet.");
-      }
-      
-      let list = users.map((id, index) => `${index + 1}. \`${id}\``).join("\n");
-      
-      ctx.replyWithMarkdown(`👥 *Registered Users:*\n\n${list}`);
-    } catch (err) {
-      console.error("❌ ListUsers command error:", err.message);
-      ctx.reply("⚠️ Failed to fetch user list.");
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const statsPath = path.join(__dirname, "..", "database", "stats.json");
+
+export default function(bot, { OWNER_ID }) {
+  const run = async (ctx) => {
+    if (ctx.from.id.toString() !== (OWNER_ID || "")) {
+      return ctx.reply("🚫 Unauthorized.");
     }
-  });
+    try {
+      const data = JSON.parse(fs.readFileSync(statsPath, "utf8"));
+      await ctx.reply(`👥 Users (${data.users.length}):\n${data.users.join(", ") || "No users yet."}`);
+    } catch {
+      await ctx.reply("❌ Could not read user database.");
+    }
+  };
+  
+  bot.command("listusers", run);
+  bot.hears(/^[.。]listusers\b/i, run);
 }

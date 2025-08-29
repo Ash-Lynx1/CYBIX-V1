@@ -3,10 +3,13 @@ services:
     name: cybix-v1
     env: node
     plan: free
-    buildCommand: "yarn install"
-    startCommand: "yarn start"
+    buildCommand: "npm install"
+    startCommand: "npm start"
     envVars:
       - key: BOT_TOKEN
         sync: false
+      - key: OWNER_ID
+        sync: false
       - key: PORT
         value: 3000
+    autoDeploy: true

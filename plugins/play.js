@@ -1,31 +1,37 @@
-import { fetchJson } from "../utils/fetcher.js";
-import config from "../config.js";
-import { defaultButtons } from "../utils/buttons.js";
+import { fetchJson, fetchBuffer } from "../utils/fetcher.js";
+import { brandKeyboard, BANNER_URL } from "../utils/buttons.js";
 
-export default function playCommand(bot) {
-  bot.hears(/^\.play\s+(.+)/i, async (ctx) => {
-    try {
-      const query = ctx.match[1];
-      const url = `https://apis.davidcyriltech.my.id/song?query=${encodeURIComponent(query)}`;
-      const res = await fetchJson(url);
-
-      if (res && res.result && res.result.url) {
-        await ctx.replyWithPhoto(
-          { url: config.banner },
-          {
-            caption: `🎵 *Music Downloader*\n\n*Title:* ${res.result.title}\n*Artist:* ${res.result.artist || "Unknown"}\n\n⬇️ Downloading...`,
-            parse_mode: "Markdown",
-            ...defaultButtons()
-          }
-        );
-
-        await ctx.replyWithAudio({ url: res.result.url, filename: `${res.result.title}.mp3` });
-      } else {
-        ctx.reply("⚠️ Music not found or failed to fetch.");
-      }
-    } catch (err) {
-      console.error("❌ Play command error:", err.message);
-      ctx.reply("⚠️ Failed to download music.");
+export default function(bot) {
+  const run = async (ctx, query) => {
+    const url = `https://apis.davidcyriltech.my.id/song?query=${encodeURIComponent(query)}`;
+    const data = await fetchJson(url);
+    const title = data?.title || data?.result?.title || query;
+    const audio = data?.result?.url || data?.url;
+    
+    if (!audio) {
+      return ctx.reply("⚠️ Could not fetch song. Try another query.", { reply_markup: brandKeyboard() });
     }
+    
+    const buf = await fetchBuffer(audio);
+    if (buf) {
+      try {
+        return await ctx.replyWithAudio({ source: buf, filename: `${title}.mp3` }, { reply_markup: brandKeyboard() });
+      } catch {
+        // fallback to link
+      }
+    }
+    return ctx.replyWithPhoto(BANNER_URL, {
+      caption: `🎵 *Play*\n\n*Title:* ${title}\n*Download:* ${audio}`,
+      parse_mode: "Markdown",
+      reply_markup: brandKeyboard()
+    });
+  };
+  
+  bot.command("play", async (ctx) => {
+    const q = ctx.message.text.split(" ").slice(1).join(" ").trim();
+    if (!q) return ctx.reply("❗ Usage: /play song name", { reply_markup: brandKeyboard() });
+    run(ctx, q);
   });
+  
+  bot.hears(/^[.。]play\s+(.+)/i, async (ctx) => run(ctx, ctx.match[1].trim()));
 }

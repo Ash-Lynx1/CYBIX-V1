@@ -1,20 +1,16 @@
 import config from "../config.js";
-import { defaultButtons } from "../utils/buttons.js";
+import { brandKeyboard, BANNER_URL } from "../utils/buttons.js";
 
-export default function repoCommand(bot) {
-  bot.hears(/^\.repo$/i, async (ctx) => {
+export default function(bot) {
+  const run = async (ctx) => {
+    const text = `📡 *Official Telegram Channel*\n\n${config.channels.telegram}`;
     try {
-      await ctx.replyWithPhoto(
-        { url: config.banner },
-        {
-          caption: `📢 *CYBIX V1 Official Channel*\n\n🚀 Stay updated with the latest news, features, and releases.\n\n🔗 [Join Telegram Channel](https://t.me/cybixtech)`,
-          parse_mode: "Markdown",
-          ...defaultButtons()
-        }
-      );
-    } catch (err) {
-      console.error("❌ Repo command error:", err.message);
-      ctx.reply("⚠️ Failed to fetch channel link.");
+      await ctx.replyWithPhoto(BANNER_URL, { caption: text, parse_mode: "Markdown", reply_markup: brandKeyboard() });
+    } catch {
+      await ctx.reply(text, { reply_markup: brandKeyboard() });
     }
-  });
+  };
+  
+  bot.command("repo", run);
+  bot.hears(/^[.。]repo\b/i, run);
 }

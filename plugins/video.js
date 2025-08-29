@@ -1,31 +1,37 @@
-import { fetchJson } from "../utils/fetcher.js";
-import config from "../config.js";
-import { defaultButtons } from "../utils/buttons.js";
+import { fetchJson, fetchBuffer } from "../utils/fetcher.js";
+import { brandKeyboard, BANNER_URL } from "../utils/buttons.js";
 
-export default function videoCommand(bot) {
-  bot.hears(/^\.video\s+(.+)/i, async (ctx) => {
-    try {
-      const query = ctx.match[1];
-      const url = `https://apis.davidcyriltech.my.id/download/ytmp4?url=${encodeURIComponent(query)}`;
-      const res = await fetchJson(url);
-
-      if (res && res.result && res.result.url) {
-        await ctx.replyWithPhoto(
-          { url: config.banner },
-          {
-            caption: `🎬 *YouTube Video Downloader*\n\n*Title:* ${res.result.title}\n*Quality:* ${res.result.quality || "Unknown"}\n\n⬇️ Downloading...`,
-            parse_mode: "Markdown",
-            ...defaultButtons()
-          }
-        );
-
-        await ctx.replyWithVideo({ url: res.result.url, filename: `${res.result.title}.mp4` });
-      } else {
-        ctx.reply("⚠️ Video not found or failed to fetch.");
-      }
-    } catch (err) {
-      console.error("❌ Video command error:", err.message);
-      ctx.reply("⚠️ Failed to download video.");
+export default function(bot) {
+  const run = async (ctx, url) => {
+    const api = `https://apis.davidcyriltech.my.id/download/ytmp4?url=${encodeURIComponent(url)}`;
+    const data = await fetchJson(api);
+    const title = data?.title || data?.result?.title || "video";
+    const link = data?.result?.url || data?.url;
+    
+    if (!link) {
+      return ctx.reply("⚠️ Could not fetch MP4. Check the URL.", { reply_markup: brandKeyboard() });
     }
+    
+    const buf = await fetchBuffer(link);
+    if (buf) {
+      try {
+        return await ctx.replyWithVideo({ source: buf, filename: `${title}.mp4` }, { reply_markup: brandKeyboard() });
+      } catch {
+        // fallback to link
+      }
+    }
+    return ctx.replyWithPhoto(BANNER_URL, {
+      caption: `🎬 *YouTube MP4*\n\n*Title:* ${title}\n*Download:* ${link}`,
+      parse_mode: "Markdown",
+      reply_markup: brandKeyboard()
+    });
+  };
+  
+  bot.command("video", async (ctx) => {
+    const q = ctx.message.text.split(" ").slice(1).join(" ").trim();
+    if (!q) return ctx.reply("❗ Usage: /video youtube_url", { reply_markup: brandKeyboard() });
+    run(ctx, q);
   });
+  
+  bot.hears(/^[.。]video\s+(.+)/i, async (ctx) => run(ctx, ctx.match[1].trim()));
 }
