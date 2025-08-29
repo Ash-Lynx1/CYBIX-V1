@@ -3,7 +3,6 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import config from "../config.js";
-import axios from "axios"; // Added axios for better URL handling
 
 // Setup paths
 const __filename = fileURLToPath(import.meta.url);
@@ -34,8 +33,8 @@ function countPlugins() {
 // Escape MarkdownV2 special chars
 function escapeMD(text = "") {
   return text
-    .replace(/([_*()~`>#+-=|{}.!\])/g, "\\$1")
-    .replace(/@/g, "\\@");
+    .replace(/([_*[\]()~`>#+=|{}.!-])/g, '\\$1')
+    .replace(/@/g, '\\@');
 }
 
 // Build menu text
@@ -100,7 +99,7 @@ export default function (bot) {
     try {
       // First try to send with photo
       await ctx.replyWithPhoto(
-        "https://files.catbox.moe/raoa3v.jpg", // Direct URL
+        "https://files.catbox.moe/raoa3v.jpg",
         {
           caption: caption,
           parse_mode: "MarkdownV2",
@@ -139,5 +138,5 @@ export default function (bot) {
   // Commands
   bot.start(sendMenu);
   bot.command("menu", sendMenu);
-  bot.hears(/^[/.。]menu\b/i, sendMenu);
+  bot.hears(/^[\/.。]menu\b/i, sendMenu);
 }
