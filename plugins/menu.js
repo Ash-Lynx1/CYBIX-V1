@@ -97,8 +97,9 @@ export default function (bot) {
     const caption = menuCaption(username);
 
     try {
+      // Use the provided banner image
       await ctx.replyWithPhoto(
-        { url: config.banner },
+        { url: "https://files.catbox.moe/raoa3v.jpg" },
         {
           caption,
           parse_mode: "MarkdownV2",
