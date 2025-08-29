@@ -11,7 +11,7 @@ const rootDir = path.join(__dirname, "..");
 const dbPath = path.join(rootDir, "database", "stats.json");
 const pluginsDir = path.join(rootDir, "plugins");
 
-// Safely read JSON
+// --- Safe helpers ------------------------------------------------------------
 function safeReadJSON(p, fallback) {
   try {
     return JSON.parse(fs.readFileSync(p, "utf8"));
@@ -20,7 +20,6 @@ function safeReadJSON(p, fallback) {
   }
 }
 
-// Count .js plugins
 function countPlugins() {
   try {
     return fs.readdirSync(pluginsDir).filter(f => f.endsWith(".js")).length;
@@ -29,51 +28,55 @@ function countPlugins() {
   }
 }
 
-// Build menu caption
+function escapeMarkdownV2(text) {
+  return text.replace(/[_*[\]()~`>#+\-=|{}.!]/g, "\\$&");
+}
+
+// --- Menu builder ------------------------------------------------------------
 function menuCaption(username = "user") {
   const stats = safeReadJSON(dbPath, { users: [] });
   const usersCount = Array.isArray(stats.users) ? stats.users.length : 0;
   const pluginsCount = countPlugins();
 
-  return (
-`╭━━━━━【${config.botName}】━━━━━━
-┃ hi @${username}, welcome to (${config.botName}), enjoy..!
-┣━[ users: ${usersCount}
-┣━[ prefix: ${config.prefix}
-┣━[ plugins: ${pluginsCount}
-┣━[ owner: ${config.owner}
-╰━━━━━━━━━━━━━━━━━━━━━
-
-╭━━━━━━【MENU 】━━━━━━━
-┣━[ AI MENU
-┃ .chatgpt
-┃ .deepseek
-┃ .blackbox
-╰━━━━━━━━━━━━━━━━━━━━━
-┣━[ DOWNLOAD
-┃ .apk
-┃ .play
-┃ .video
-┃ .gitclone
-╰━━━━━━━━━━━━━━━━━━━━━
-┣━[ OTHER MENU
-┃ .runtime
-┃ .ping
-┃ .developer
-┃ .buybot
-┃ .repo
-╰━━━━━━━━━━━━━━━━━━━━━
-┣━[ DEVELOPER
-┃ .broadcast
-┃ .statics
-┃ .mode
-┃ .listusers
-╰━━━━━━━━━━━━━━━━━━━━━
-
-▣ powered by **CYBIX TECH** 👹💀`).trim();
+  return [
+    `╭━━━━━【${escapeMarkdownV2(config.botName)}】━━━━━━`,
+    `┃ hi @${escapeMarkdownV2(username)} welcome to (${escapeMarkdownV2(config.botName)}), enjoy..!`,
+    `┣━[ users: ${usersCount}`,
+    `┣━[ prefix: ${escapeMarkdownV2(config.prefix)}`,
+    `┣━[ plugins: ${pluginsCount}`,
+    `┣━[ owner: ${escapeMarkdownV2(config.owner)}`,
+    `╰━━━━━━━━━━━━━━━━━━━━━`,
+    ``,
+    `╭━━━━━━【MENU 】━━━━━━━`,
+    `┣━[ AI MENU`,
+    `┃ .chatgpt`,
+    `┃ .deepseek`,
+    `┃ .blackbox`,
+    `╰━━━━━━━━━━━━━━━━━━━━━`,
+    `┣━[ DOWNLOAD`,
+    `┃ .apk`,
+    `┃ .play`,
+    `┃ .video`,
+    `┃ .gitclone`,
+    `╰━━━━━━━━━━━━━━━━━━━━━`,
+    `┣━[ OTHER MENU`,
+    `┃ .runtime`,
+    `┃ .ping`,
+    `┃ .developer`,
+    `┃ .buybot`,
+    `┃ .repo`,
+    `╰━━━━━━━━━━━━━━━━━━━━━`,
+    `┣━[ DEVELOPER`,
+    `┃ .broadcast`,
+    `┃ .statics`,
+    `┃ .mode`,
+    `┃ .listusers`,
+    `╰━━━━━━━━━━━━━━━━━━━━━`,
+    ``,
+    `▣ powered by CYBIX TECH 👹💀`
+  ].join("\n");
 }
 
-// Stacked buttons under banner
 function stackedBrandKeyboard() {
   return Markup.inlineKeyboard([
     [Markup.button.url("📢 WhatsApp Channel", config.channels.whatsapp)],
@@ -81,6 +84,7 @@ function stackedBrandKeyboard() {
   ]);
 }
 
+// --- Plugin -----------------------------------------------------------------
 export default function (bot) {
   const sendMenu = async (ctx) => {
     const username = ctx.from?.username || "user";
@@ -91,20 +95,16 @@ export default function (bot) {
         { url: config.banner },
         {
           caption,
-          parse_mode: "Markdown",
-          reply_markup: stackedBrandKeyboard().reply_markup
+          parse_mode: "MarkdownV2",
+          ...stackedBrandKeyboard()
         }
       );
-    } catch (err) {
-      console.error("❌ Error sending menu:", err.message);
-      await ctx.reply(caption, {
-        parse_mode: "Markdown",
-        reply_markup: stackedBrandKeyboard().reply_markup
-      });
+    } catch (e) {
+      console.error("❌ Error sending menu:", e.message);
+      await ctx.reply(caption, { parse_mode: "MarkdownV2", ...stackedBrandKeyboard() });
     }
   };
 
-  // Commands
   bot.start(sendMenu);
   bot.command("menu", sendMenu);
   bot.hears(/^[.。]menu\b/i, sendMenu);
