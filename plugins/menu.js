@@ -37,7 +37,7 @@ function escapeMD(text = "") {
     .replace(/@/g, "\\@");
 }
 
-// Build menu text
+// Build menu text -- REPLACED '.' with '/'
 function menuCaption(username = "user") {
   const stats = safeReadJSON(dbPath, { users: [] });
   const usersCount = Array.isArray(stats.users) ? stats.users.length : 0;
@@ -54,27 +54,27 @@ function menuCaption(username = "user") {
 
 ╭━━━━━━【MENU】━━━━━━━
 ┣━ AI MENU
-┃ .chatgpt
-┃ .deepseek
-┃ .blackbox
+┃ /chatgpt
+┃ /deepseek
+┃ /blackbox
 ╰━━━━━━━━━━━━━━━━━━━━━
 ┣━ DOWNLOAD
-┃ .apk
-┃ .play
-┃ .video
-┃ .gitclone
+┃ /apk
+┃ /play
+┃ /video
+┃ /gitclone
 ╰━━━━━━━━━━━━━━━━━━━━━
 ┣━ OTHER MENU
-┃ .runtime
-┃ .ping
-┃ .developer
-┃ .buybot
-┃ .repo
+┃ /runtime
+┃ /ping
+┃ /developer
+┃ /buybot
+┃ /repo
 ╰━━━━━━━━━━━━━━━━━━━━━
 ┣━ DEVELOPER
-┃ .broadcast
-┃ .mode
-┃ .listusers
+┃ /broadcast
+┃ /mode
+┃ /listusers
 ╰━━━━━━━━━━━━━━━━━━━━━
 
 ▣ Powered by CYBIX TECH 👹💀`).trim();
@@ -119,5 +119,5 @@ export default function (bot) {
   // Commands
   bot.start(sendMenu);
   bot.command("menu", sendMenu);
-  bot.hears(/^[.。]menu\b/i, sendMenu);
+  bot.hears(/^[/.。]menu\b/i, sendMenu);
 }
