@@ -1,10 +1,10 @@
-// plugins/menu.js
 import { Markup } from "telegraf";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import config from "../config.js";
 
+// Setup paths
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const rootDir = path.join(__dirname, "..");
@@ -15,7 +15,8 @@ const pluginsDir = path.join(rootDir, "plugins");
 function safeReadJSON(p, fallback) {
   try {
     return JSON.parse(fs.readFileSync(p, "utf8"));
-  } catch {
+  } catch (err) {
+    console.error("Error reading JSON:", err);
     return fallback;
   }
 }
@@ -23,14 +24,17 @@ function safeReadJSON(p, fallback) {
 function countPlugins() {
   try {
     return fs.readdirSync(pluginsDir).filter(f => f.endsWith(".js")).length;
-  } catch {
+  } catch (err) {
+    console.error("Error counting plugins:", err);
     return 0;
   }
 }
 
 // Escape MarkdownV2 special chars
 function escapeMD(text = "") {
-  return text.replace(/([_*\[\]()~`>#+\-=|{}.!\\])/g, "\\$1");
+  return text
+    .replace(/([_*\[\]()~`>#+\-=|{}.!\\])/g, "\\$1")
+    .replace(/@/g, "\\@");
 }
 
 // Build menu text
@@ -41,7 +45,7 @@ function menuCaption(username = "user") {
 
   return (
 `╭━━━━━【${escapeMD(config.botName)}】━━━━━━
-┃ Hi @${escapeMD(username)} welcome to ${escapeMD(config.botName)}, enjoy..!
+┃ Hi \\@${escapeMD(username)} welcome to ${escapeMD(config.botName)}, enjoy..!
 ┣━ Users: ${usersCount}
 ┣━ Prefix: ${escapeMD(config.prefix)}
 ┣━ Plugins: ${pluginsCount}
@@ -78,10 +82,12 @@ function menuCaption(username = "user") {
 
 // Keyboard with stacked buttons
 function stackedBrandKeyboard() {
-  return Markup.inlineKeyboard([
-    [Markup.button.url("📢 WhatsApp Channel", config.channels.whatsapp)],
-    [Markup.button.url("🚀 Telegram Channel", config.channels.telegram)]
-  ]);
+  return {
+    reply_markup: Markup.inlineKeyboard([
+      [Markup.button.url("📢 WhatsApp Channel", config.channels.whatsapp)],
+      [Markup.button.url("🚀 Telegram Channel", config.channels.telegram)]
+    ])
+  };
 }
 
 // ---- Exported Plugin ----
@@ -101,7 +107,12 @@ export default function (bot) {
       );
     } catch (err) {
       console.error("❌ Error sending menu:", err.message);
-      await ctx.reply(caption, { parse_mode: "MarkdownV2", ...stackedBrandKeyboard() });
+      // Try plain text fallback, escaping parse errors
+      try {
+        await ctx.reply(caption, { parse_mode: "MarkdownV2", ...stackedBrandKeyboard() });
+      } catch (err2) {
+        await ctx.reply(caption, stackedBrandKeyboard()); // No parse_mode
+      }
     }
   };
 
