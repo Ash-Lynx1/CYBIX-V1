@@ -11,7 +11,7 @@ const rootDir = path.join(__dirname, "..");
 const dbPath = path.join(rootDir, "database", "stats.json");
 const pluginsDir = path.join(rootDir, "plugins");
 
-// --- Safe helpers ------------------------------------------------------------
+// ---- Helpers ----
 function safeReadJSON(p, fallback) {
   try {
     return JSON.parse(fs.readFileSync(p, "utf8"));
@@ -28,55 +28,55 @@ function countPlugins() {
   }
 }
 
-function escapeMarkdownV2(text) {
-  return text.replace(/[_*[\]()~`>#+\-=|{}.!]/g, "\\$&");
+// Escape MarkdownV2 special chars
+function escapeMD(text = "") {
+  return text.replace(/([_*\[\]()~`>#+\-=|{}.!\\])/g, "\\$1");
 }
 
-// --- Menu builder ------------------------------------------------------------
+// Build menu text
 function menuCaption(username = "user") {
   const stats = safeReadJSON(dbPath, { users: [] });
   const usersCount = Array.isArray(stats.users) ? stats.users.length : 0;
   const pluginsCount = countPlugins();
 
-  return [
-    `╭━━━━━【${escapeMarkdownV2(config.botName)}】━━━━━━`,
-    `┃ hi @${escapeMarkdownV2(username)} welcome to (${escapeMarkdownV2(config.botName)}), enjoy..!`,
-    `┣━[ users: ${usersCount}`,
-    `┣━[ prefix: ${escapeMarkdownV2(config.prefix)}`,
-    `┣━[ plugins: ${pluginsCount}`,
-    `┣━[ owner: ${escapeMarkdownV2(config.owner)}`,
-    `╰━━━━━━━━━━━━━━━━━━━━━`,
-    ``,
-    `╭━━━━━━【MENU 】━━━━━━━`,
-    `┣━[ AI MENU`,
-    `┃ .chatgpt`,
-    `┃ .deepseek`,
-    `┃ .blackbox`,
-    `╰━━━━━━━━━━━━━━━━━━━━━`,
-    `┣━[ DOWNLOAD`,
-    `┃ .apk`,
-    `┃ .play`,
-    `┃ .video`,
-    `┃ .gitclone`,
-    `╰━━━━━━━━━━━━━━━━━━━━━`,
-    `┣━[ OTHER MENU`,
-    `┃ .runtime`,
-    `┃ .ping`,
-    `┃ .developer`,
-    `┃ .buybot`,
-    `┃ .repo`,
-    `╰━━━━━━━━━━━━━━━━━━━━━`,
-    `┣━[ DEVELOPER`,
-    `┃ .broadcast`,
-    `┃ .statics`,
-    `┃ .mode`,
-    `┃ .listusers`,
-    `╰━━━━━━━━━━━━━━━━━━━━━`,
-    ``,
-    `▣ powered by CYBIX TECH 👹💀`
-  ].join("\n");
+  return (
+`╭━━━━━【${escapeMD(config.botName)}】━━━━━━
+┃ Hi @${escapeMD(username)} welcome to ${escapeMD(config.botName)}, enjoy..!
+┣━ Users: ${usersCount}
+┣━ Prefix: ${escapeMD(config.prefix)}
+┣━ Plugins: ${pluginsCount}
+┣━ Owner: ${escapeMD(config.owner)}
+╰━━━━━━━━━━━━━━━━━━━━━
+
+╭━━━━━━【MENU】━━━━━━━
+┣━ AI MENU
+┃ .chatgpt
+┃ .deepseek
+┃ .blackbox
+╰━━━━━━━━━━━━━━━━━━━━━
+┣━ DOWNLOAD
+┃ .apk
+┃ .play
+┃ .video
+┃ .gitclone
+╰━━━━━━━━━━━━━━━━━━━━━
+┣━ OTHER MENU
+┃ .runtime
+┃ .ping
+┃ .developer
+┃ .buybot
+┃ .repo
+╰━━━━━━━━━━━━━━━━━━━━━
+┣━ DEVELOPER
+┃ .broadcast
+┃ .mode
+┃ .listusers
+╰━━━━━━━━━━━━━━━━━━━━━
+
+▣ Powered by CYBIX TECH 👹💀`).trim();
 }
 
+// Keyboard with stacked buttons
 function stackedBrandKeyboard() {
   return Markup.inlineKeyboard([
     [Markup.button.url("📢 WhatsApp Channel", config.channels.whatsapp)],
@@ -84,7 +84,7 @@ function stackedBrandKeyboard() {
   ]);
 }
 
-// --- Plugin -----------------------------------------------------------------
+// ---- Exported Plugin ----
 export default function (bot) {
   const sendMenu = async (ctx) => {
     const username = ctx.from?.username || "user";
@@ -99,12 +99,13 @@ export default function (bot) {
           ...stackedBrandKeyboard()
         }
       );
-    } catch (e) {
-      console.error("❌ Error sending menu:", e.message);
+    } catch (err) {
+      console.error("❌ Error sending menu:", err.message);
       await ctx.reply(caption, { parse_mode: "MarkdownV2", ...stackedBrandKeyboard() });
     }
   };
 
+  // Commands
   bot.start(sendMenu);
   bot.command("menu", sendMenu);
   bot.hears(/^[.。]menu\b/i, sendMenu);
