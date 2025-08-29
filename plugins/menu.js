@@ -16,6 +16,7 @@ function safeReadJSON(p, fallback) {
   try {
     return JSON.parse(fs.readFileSync(p, "utf8"));
   } catch (err) {
+    console.error("Error reading JSON:", err);
     return fallback;
   }
 }
@@ -23,7 +24,8 @@ function safeReadJSON(p, fallback) {
 function countPlugins() {
   try {
     return fs.readdirSync(pluginsDir).filter(f => f.endsWith(".js")).length;
-  } catch {
+  } catch (err) {
+    console.error("Error counting plugins:", err);
     return 0;
   }
 }
@@ -31,8 +33,8 @@ function countPlugins() {
 // Escape MarkdownV2 special chars
 function escapeMD(text = "") {
   return text
-    .replace(/([_*()~`>#+-=|{}.!])/g, "\\$1")
-    .replace(/@/g, "@");
+    .replace(/([_*\[\]()~`>#+\-=|{}.!\\])/g, "\\$1")
+    .replace(/@/g, "\\@");
 }
 
 // Build menu text -- REPLACED '.' with '/'
@@ -42,8 +44,8 @@ function menuCaption(username = "user") {
   const pluginsCount = countPlugins();
 
   return (
-    `╭━━━━━【${escapeMD(config.botName)}】━━━━━━
-┃ Hi @${escapeMD(username)} welcome to ${escapeMD(config.botName)}, enjoy..!
+`╭━━━━━【${escapeMD(config.botName)}】━━━━━━
+┃ Hi \\@${escapeMD(username)} welcome to ${escapeMD(config.botName)}, enjoy..!
 ┣━ Users: ${usersCount}
 ┣━ Prefix: ${escapeMD(config.prefix)}
 ┣━ Plugins: ${pluginsCount}
@@ -93,9 +95,10 @@ export default function (bot) {
   const sendMenu = async (ctx) => {
     const username = ctx.from?.username || "user";
     const caption = menuCaption(username);
+
     try {
       await ctx.replyWithPhoto(
-        { url: "https://files.catbox.moe/raoa3v.jpg" },
+        { url: config.banner },
         {
           caption,
           parse_mode: "MarkdownV2",
@@ -103,14 +106,17 @@ export default function (bot) {
         }
       );
     } catch (err) {
+      console.error("❌ Error sending menu:", err.message);
+      // Try plain text fallback, escaping parse errors
       try {
         await ctx.reply(caption, { parse_mode: "MarkdownV2", ...stackedBrandKeyboard() });
-      } catch {
-        await ctx.reply(caption, stackedBrandKeyboard());
+      } catch (err2) {
+        await ctx.reply(caption, stackedBrandKeyboard()); // No parse_mode
       }
     }
   };
 
+  // Commands
   bot.start(sendMenu);
   bot.command("menu", sendMenu);
   bot.hears(/^[/.。]menu\b/i, sendMenu);
