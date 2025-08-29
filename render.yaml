@@ -1,12 +1,19 @@
 services:
-  - type: worker
+  - type: web
     name: cybix-v1
     env: node
-    buildCommand: npm install --legacy-peer-deps
-    startCommand: npm start
     plan: free
+    buildCommand: "yarn install --no-progress --frozen-lockfile || yarn install"
+    startCommand: "yarn start"
     envVars:
       - key: BOT_TOKEN
         sync: false
       - key: OWNER_ID
         sync: false
+    healthCheckPath: /
+    autoDeploy: true
+    preDeployCommand: |
+      if [ -z "$BOT_TOKEN" ]; then
+        echo "❌ BOT_TOKEN is not set. Configure it in Render Environment Variables."
+        exit 1
+      fi
