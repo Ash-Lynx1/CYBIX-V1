@@ -21,9 +21,12 @@ import staticsCommand from "./plugins/statics.js";
 import modeCommand from "./plugins/mode.js";
 import listUsersCommand from "./plugins/listusers.js";
 
+if (!config.botToken) {
+  throw new Error("BOT_TOKEN is missing. Please set it in your Render environment variables!");
+}
+
 const bot = new Telegraf(config.botToken);
 
-// 🔹 User registration + command counter middleware
 bot.use(async (ctx, next) => {
   try {
     if (ctx.from && ctx.from.id) {
@@ -40,7 +43,7 @@ bot.use(async (ctx, next) => {
   return next();
 });
 
-// 🔹 Load all plugins
+// Load plugins
 menuCommand(bot);
 chatgptCommand(bot);
 deepseekCommand(bot);
@@ -59,7 +62,7 @@ staticsCommand(bot);
 modeCommand(bot);
 listUsersCommand(bot);
 
-// 🔹 Global error handling (no crashes)
+// Global error handling (no crashes)
 process.on("uncaughtException", (err) => {
   console.error("❌ Uncaught Exception:", err);
 });
