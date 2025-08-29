@@ -3,6 +3,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import config from "../config.js";
+import axios from "axios"; // Added axios for better URL handling
 
 // Setup paths
 const __filename = fileURLToPath(import.meta.url);
@@ -33,11 +34,11 @@ function countPlugins() {
 // Escape MarkdownV2 special chars
 function escapeMD(text = "") {
   return text
-    .replace(/([_*\[\]()~`>#+\-=|{}.!\\])/g, "\\$1")
+    .replace(/([_*()~`>#+-=|{}.!\])/g, "\\$1")
     .replace(/@/g, "\\@");
 }
 
-// Build menu text -- REPLACED '.' with '/'
+// Build menu text
 function menuCaption(username = "user") {
   const stats = safeReadJSON(dbPath, { users: [] });
   const usersCount = Array.isArray(stats.users) ? stats.users.length : 0;
@@ -45,7 +46,7 @@ function menuCaption(username = "user") {
 
   return (
 `╭━━━━━【${escapeMD(config.botName)}】━━━━━━
-┃ Hi \\@${escapeMD(username)} welcome to ${escapeMD(config.botName)}, enjoy..!
+┃ Hi @${escapeMD(username)} welcome to ${escapeMD(config.botName)}, enjoy..!
 ┣━ Users: ${usersCount}
 ┣━ Prefix: ${escapeMD(config.prefix)}
 ┣━ Plugins: ${pluginsCount}
@@ -97,22 +98,40 @@ export default function (bot) {
     const caption = menuCaption(username);
 
     try {
-      // Use the provided banner image
+      // First try to send with photo
       await ctx.replyWithPhoto(
-        { url: "https://files.catbox.moe/raoa3v.jpg" },
+        "https://files.catbox.moe/raoa3v.jpg", // Direct URL
         {
-          caption,
+          caption: caption,
           parse_mode: "MarkdownV2",
           ...stackedBrandKeyboard()
         }
       );
-    } catch (err) {
-      console.error("❌ Error sending menu:", err.message);
-      // Try plain text fallback, escaping parse errors
+    } catch (photoError) {
+      console.error("❌ Error sending photo:", photoError.message);
+      
+      // If photo fails, try with document
       try {
-        await ctx.reply(caption, { parse_mode: "MarkdownV2", ...stackedBrandKeyboard() });
-      } catch (err2) {
-        await ctx.reply(caption, stackedBrandKeyboard()); // No parse_mode
+        await ctx.replyWithDocument(
+          "https://files.catbox.moe/raoa3v.jpg",
+          {
+            caption: caption,
+            parse_mode: "MarkdownV2",
+            ...stackedBrandKeyboard()
+          }
+        );
+      } catch (docError) {
+        console.error("❌ Error sending document:", docError.message);
+        
+        // If all else fails, send text only
+        try {
+          await ctx.reply(caption, { 
+            parse_mode: "MarkdownV2", 
+            ...stackedBrandKeyboard() 
+          });
+        } catch (err2) {
+          await ctx.reply(caption, stackedBrandKeyboard());
+        }
       }
     }
   };
