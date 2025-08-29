@@ -3,11 +3,16 @@ import { brandKeyboard, BANNER_URL } from "../utils/buttons.js";
 
 export default function(bot) {
   const run = async (ctx) => {
-    const text = `👨‍💻 *Developer*\n\n${config.owner}`;
     try {
-      await ctx.replyWithPhoto(BANNER_URL, { caption: text, parse_mode: "Markdown", reply_markup: brandKeyboard() });
-    } catch {
-      await ctx.reply(text, { reply_markup: brandKeyboard() });
+      const text = `👨‍💻 *Developer*\n\n${config.owner}`;
+      try {
+        await ctx.replyWithPhoto(BANNER_URL, { caption: text, parse_mode: "Markdown", reply_markup: brandKeyboard() });
+      } catch {
+        await ctx.reply(text, { reply_markup: brandKeyboard() });
+      }
+    } catch (err) {
+      await ctx.reply("❌ Error: Unable to send developer info.", { reply_markup: brandKeyboard() });
+      console.error("Developer plugin error:", err);
     }
   };
   

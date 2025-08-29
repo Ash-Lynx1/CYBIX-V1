@@ -6,6 +6,14 @@ import path from "path";
 import { fileURLToPath } from "url";
 import express from "express";
 
+// Global error handlers
+process.on("unhandledRejection", (reason) => {
+  console.error("❌ Unhandled Rejection:", reason);
+});
+process.on("uncaughtException", (err) => {
+  console.error("❌ Uncaught Exception:", err);
+});
+
 // Ensure bot token is set
 if (!config.botToken) {
   console.error("❌ BOT_TOKEN is missing! Set it in Render Environment Variables.");
@@ -25,14 +33,14 @@ fs.readdirSync(pluginsDir).forEach(file => {
     import(path.join(pluginsDir, file)).then(plugin => {
       if (typeof plugin.default === "function") {
         try {
-          plugin.default(bot);
+          plugin.default(bot, config);
           console.log(`✅ Plugin loaded: ${file}`);
         } catch (err) {
-          console.error(`❌ Failed to load plugin ${file}:`, err.message);
+          console.error(`❌ Failed to load plugin ${file}:`, err);
         }
       }
     }).catch(err => {
-      console.error(`❌ Error importing ${file}:`, err.message);
+      console.error(`❌ Error importing ${file}:`, err);
     });
   }
 });

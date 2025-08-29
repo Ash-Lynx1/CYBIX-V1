@@ -11,35 +11,43 @@ function readUsers() {
   try {
     const data = JSON.parse(fs.readFileSync(statsPath, "utf8"));
     return Array.isArray(data.users) ? data.users : [];
-  } catch {
+  } catch (err) {
+    console.error("❌ broadcast: Could not read stats.json:", err);
     return [];
   }
 }
 
 export default function(bot, { OWNER_ID }) {
   const run = async (ctx) => {
-    if (ctx.from.id.toString() !== (OWNER_ID || "")) {
-      return ctx.reply("🚫 You are not authorized to use this command.");
-    }
-    const text = ctx.message.text.split(" ").slice(1).join(" ").trim();
-    if (!text) return ctx.reply("❗ Usage: /broadcast your message");
-    
-    const users = readUsers();
-    let ok = 0;
-    for (const uid of users) {
-      try {
-        await ctx.telegram.sendMessage(uid, `📢 Broadcast:\n\n${text}`, { reply_markup: brandKeyboard() });
-        ok++;
-      } catch {}
-    }
-    
     try {
-      await ctx.replyWithPhoto(BANNER_URL, {
-        caption: `✅ Broadcast sent to ${ok}/${users.length} users.`,
-        reply_markup: brandKeyboard()
-      });
-    } catch {
-      await ctx.reply(`✅ Broadcast sent to ${ok}/${users.length} users.`, { reply_markup: brandKeyboard() });
+      if (ctx.from.id.toString() !== (OWNER_ID || "")) {
+        return ctx.reply("🚫 You are not authorized to use this command.");
+      }
+      const text = ctx.message.text.split(" ").slice(1).join(" ").trim();
+      if (!text) return ctx.reply("❗ Usage: /broadcast your message");
+      
+      const users = readUsers();
+      let ok = 0;
+      for (const uid of users) {
+        try {
+          await ctx.telegram.sendMessage(uid, `📢 Broadcast:\n\n${text}`, { reply_markup: brandKeyboard() });
+          ok++;
+        } catch (err) {
+          console.error("❌ broadcast: Failed to send to user", uid, err);
+        }
+      }
+      
+      try {
+        await ctx.replyWithPhoto(BANNER_URL, {
+          caption: `✅ Broadcast sent to ${ok}/${users.length} users.`,
+          reply_markup: brandKeyboard()
+        });
+      } catch {
+        await ctx.reply(`✅ Broadcast sent to ${ok}/${users.length} users.`, { reply_markup: brandKeyboard() });
+      }
+    } catch (err) {
+      await ctx.reply("❌ Error: Could not send broadcast.", { reply_markup: brandKeyboard() });
+      console.error("Broadcast plugin error:", err);
     }
   };
   

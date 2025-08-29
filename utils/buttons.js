@@ -1,14 +1,14 @@
+// utils/buttons.js
 import config from "../config.js";
+export const BANNER_URL = config.banner;
 
 export function brandKeyboard() {
   return {
     inline_keyboard: [
       [
-        { text: "📢 WhatsApp Channel", url: config.channels.whatsapp },
-        { text: "🚀 Telegram Channel", url: config.channels.telegram }
+        { text: "Official Channel", url: config.channels.telegram },
+        { text: "Buy Bot", url: "https://t.me/cybixdev" }
       ]
     ]
   };
 }
-
-export const BANNER_URL = config.banner;
